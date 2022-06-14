@@ -1,0 +1,59 @@
+writeconsole"Running game copier by SourceQuery v3.2 R1"
+
+if game.ReplicatedFirst:FindFirstChild("GameModular") then game.ReplicatedFirst.GameModular:Destroy(); end
+
+local Create = function(Class, Parent, Name)
+	local Item = Instance.new(Class);
+	Item.Parent = Parent;
+	Item.Name = Name;
+	return Item;
+end
+
+local GameModular = Create("Folder", game.ReplicatedFirst, "GameModular");
+
+local SearchIn = {"Workspace", "Lighting", "StarterGui", "StarterPack", "ReplicatedFirst", "ReplicatedStorage"}
+ScriptSearch = function(Object, Category)
+	if Object ~= GameModular then
+		for Index, Value in next, Object:GetChildren() do
+			pcall(function()
+				if Value:IsA("LocalScript") or Value:IsA("ModuleScript") then
+					Value.Source = decompile(Value);
+					Value:Clone().Parent = GameModular[Category];
+				end
+			end)
+			if #Value:GetChildren() > 0 then
+				print("Searching again...");
+				ScriptSearch(Value, Category);
+			end
+		end
+	end
+end
+
+Search = function(Category)
+	local Item = game:FindFirstChild(Category);
+	if Item then
+		for Index, Value in next, Item:GetChildren() do
+			if Value ~= GameModular then
+			if Value.Archivable == false then Value.Archivable = true end; 
+				if Value.Archivable == true and not Value:IsA("Terrain") and not game.Players:FindFirstChild(Value.Name) then
+					Value:Clone().Parent = GameModular[Category];
+					--local Bypass = Value:Clone();
+                    --Bypass.Parent = Value;
+                   -- local Copy = Bypass:Clone();
+                   -- Copy.Parent = GameModules[Category];
+				end
+			end
+		end
+	end
+end
+
+for _, Category in next, SearchIn do
+	local Main = Create("Folder", GameModular, Category);
+	local Scripts = Create("Folder", GameModular, Category.."Scripts");
+
+	ScriptSearch(game[Category], Scripts.Name);
+	Search(Category);
+end
+printconsole"Saving map models and scripts...";
+SaveInstance(getelysianpath(), GameModular, "Game.rbxl");
+printconsole"Map saves as Game.rbxl";
